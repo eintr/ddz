@@ -88,13 +88,13 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 create_tun(<<A1:8, A2:8, A3:8, A4:8>>, <<B1:8, B2:8, B3:8, B4:8>>, MTU, ExtraRouteList) ->
 	{ok, TunPID} = tuncer:create([], [tun, {active, true}]),
 	IFName = binary:bin_to_list(tuncer:devname(TunPID)),
-	{0, _} = util:system(io_lib:format("ip address add dev ~s ~p.~p.~p.~p peer ~p.~p.~p.~p", [IFName, A1, A2, A3, A4, B1, B2, B3, B4])),
-	{0, _} = util:system(io_lib:format("ip link set dev ~s up", [IFName])),
-	{0, _} = util:system(io_lib:format("ip link set dev ~s mtu ~p", [IFName, MTU])),
+	{0, _} = system(io_lib:format("ip address add dev ~s ~p.~p.~p.~p peer ~p.~p.~p.~p", [IFName, A1, A2, A3, A4, B1, B2, B3, B4])),
+	{0, _} = system(io_lib:format("ip link set dev ~s up", [IFName])),
+	{0, _} = system(io_lib:format("ip link set dev ~s mtu ~p", [IFName, MTU])),
 	lists:foreach(fun (default) ->
-						  util:system(io_lib:format("ip route add default dev ~s", [IFName]));
+						  system(io_lib:format("ip route add default dev ~s", [IFName]));
 					  ({{A,B,C,D}, L}) ->
-						  util:system(io_lib:format("ip route add ~p.~p.~p.~p/~p dev ~s", [A,B,C,D,L, IFName]))
+						  system(io_lib:format("ip route add ~p.~p.~p.~p/~p dev ~s", [A,B,C,D,L, IFName]))
 				  end, ExtraRouteList),
 	put(tun_ifname, IFName),
 	io:format("~p: ~s is configured an activated.\n", [?MODULE, get(tun_ifname)]),
@@ -116,4 +116,21 @@ echo_send(DAddr, {1, _}, Bin) ->
 echo_send(DAddr, {N, Delay}, Bin) ->
 	timer:apply_after(Delay*(N-1), gen_server, cast, [tranceiver, {down, DAddr, Bin}]),
 	echo_send(DAddr, {N-1, Delay}, Bin).
+
+
+system(Str) ->
+	PidStr = lists:flatten(io_lib:format("~p", [self()])),
+	PidSalt = string:strip(string:strip(PidStr, left, $<), right, $>),
+	TimeSalt = string:strip(
+			string:strip(
+				lists:flatten(io_lib:format("~p", [os:timestamp()])),
+				left, ${),
+			right, $}),
+	TmpFname = "/tmp/wormhole."++ os:getpid() ++ "." ++ PidSalt ++ TimeSalt,
+	CMD = lists:flatten(Str) ++ " > " ++ TmpFname ++ " ; echo $?",
+	Codeout = os:cmd(CMD),
+	Code = list_to_integer(string:strip(Codeout, right, 10)),
+	{ok, OutPutBin} = file:read_file(TmpFname),
+	file:delete(TmpFname),
+	{Code, binary:bin_to_list(OutPutBin)}.
 
