@@ -32,7 +32,7 @@ start_link(ConnCfg) ->
 %% ------------------------------------------------------------------
 
 init([{PeerID, SharedKey, GS, RouteList}]) ->
-	LocalID = application:get_env(local_id),
+	{ok, LocalID} = application:get_env(local_id),
 	MTU = 1500-garble:delta_len(GS),
 	{ok, TunPID} = create_tun(LocalID, PeerID, MTU, RouteList),
 	{ok, relay, {LocalID, TunPID, SharedKey, GS, {1, 0}}}.
