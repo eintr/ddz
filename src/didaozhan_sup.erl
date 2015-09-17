@@ -23,8 +23,9 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
+	Auth = ?CHILD(authserver, worker),
 	KV = ?CHILD(kv_store, worker),
 	TR = ?CHILD(tranceiver, worker),
 	Dispatcher = ?CHILD(dispatcher, worker),
-    {ok, { {one_for_one, 5, 10}, [KV, Dispatcher, TR]} }.
+    {ok, { {one_for_one, 5, 10}, [Auth, KV, Dispatcher, TR]} }.
 
