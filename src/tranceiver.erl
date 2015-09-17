@@ -59,7 +59,7 @@ handle_call(_Request, _From, State) ->
 
 handle_cast({down, {DAddr, DPort}, WireBin}, {DownIndex}) ->
 	[{_Addr, Socket}=H|T] = DownIndex,
-	io:format("~p: Going to send ~p to ~p:~p..\n", [?MODULE, WireBin, DAddr, DPort]),
+	io:format("~p: Going to send ~p bytes to ~p:~p..\n", [?MODULE, byte_size(WireBin), DAddr, DPort]),
 	gen_udp:send(Socket, DAddr, DPort, WireBin),
 	{noreply, {T++[H]}};
 handle_cast(_Msg, State) ->
