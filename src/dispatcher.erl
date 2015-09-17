@@ -69,7 +69,7 @@ handle_cast({up, FromAddr, WireBin}, State) ->
 			end;
 		_ ->
 			{Pid} = get(?CONNID_CTRL),
-			gen_fsm:send_event(Pid, {up, FromAddr, Msg#msg.body})
+			gen_fsm:send_event(Pid, {up, FromAddr, Msg})
 	end,
 	{noreply, State};
 handle_cast(_Msg, State) ->
