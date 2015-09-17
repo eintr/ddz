@@ -106,8 +106,8 @@ decrypt_keysync(MsgBody, {PrivK, _PubK}) ->
 				{ok, GSript} ->
 					{ok, #msg_body_keysync_info{ client_id=ClientID,
 												 shared_key=SharedK,
-												 username=binary_to_list(Username),
-												 password=binary_to_list(Password),
+												 username=string:strip(binary_to_list(Username), right, 0),
+												 password=string:strip(binary_to_list(Password), right, 0),
 												 garble_script=GSript}};
 				{error, Reason} ->
 					{error, "Garble script "++Reason}

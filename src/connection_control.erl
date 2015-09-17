@@ -119,7 +119,6 @@ msg_process(FromAddr, #msg{code=?CODE_CRTREQ, body=_}) ->
 		  end,
 	send_msg(FromAddr, Msg);
 msg_process({IP, _}, #msg{code=?CODE_CRT, body=Body}) ->
-	io:format("GOT a CRT msg:~p\n", [#msg{code=?CODE_CRT, body=Body}]),
 	CRT = Body#msg_body_crt.x509,
 	case get({pending_crtreq, IP}) of
 		undefined ->
