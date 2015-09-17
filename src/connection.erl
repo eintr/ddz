@@ -103,13 +103,13 @@ create_tun(<<A1:8, A2:8, A3:8, A4:8>>, <<B1:8, B2:8, B3:8, B4:8>>, MTU, ExtraRou
 encrypt(Key, Tip) when byte_size(Tip)<8 ->
 	crypto:block_encrypt(Key, <<Tip/binary, (binary:copy(<<0>>, 8-byte_size(Tip)))/binary>>);
 encrypt(Key, <<Block:8/binary, Rest/binary>>) ->
-	<<(crypto:block_encrypt(Key, Block))/binary, (encrypt(Key, Rest))/binary>>.
+	<<(crypto:block_encrypt(blowfish_ecb, Key, Block))/binary, (encrypt(Key, Rest))/binary>>.
 
 decrypt(Key, Bin, Len) ->
 	binary:part(decrypt(Key, Bin), 0, Len).
 decrypt(_, <<>>) -> <<>>;
 decrypt(Key, <<Block:8/binary, Rest/binary>>) ->
-	<<(crypto:block_encrypt(Key, Block))/binary, (decrypt(Key, Rest))/binary>>.
+	<<(crypto:block_encrypt(blowfish_ecb, Key, Block))/binary, (decrypt(Key, Rest))/binary>>.
 
 echo_send(DAddr, {1, _}, Bin) ->
 	gen_server:cast(tranceiver, {down, DAddr, Bin});
