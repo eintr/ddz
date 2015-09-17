@@ -1,6 +1,6 @@
 -module(garble).
 
--export([en/2, de/2]).
+-export([en/2, de/2, delta_len/1]).
 
 % [
 % 	{insert, {Pos, Len}, random},	Done
@@ -16,6 +16,13 @@ en(Data, Script) ->
 de(Data, []) -> Data;
 de(Data, Script) ->
 	lists:foldr(fun (J, A)-> do_de(A, J) end, Data, Script).
+
+delta_len(L) ->
+	delta_len(L, 0).
+delta_len([], N) -> N;
+delta_len([{insert, {_, L}, random}|T], N) -> delta_len(T, N+L);
+delta_len([{insert, _, Bin}|T], N) -> delta_len(T, N+byte_size(Bin));
+delta_len([_|T], N) -> delta_len(T, N).
 
 do_en(Data, {insert, {Pos, Len}, random}) ->
 	do_en(Data, {insert, Pos, crypto:rand_bytes(Len)});
