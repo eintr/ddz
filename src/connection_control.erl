@@ -145,10 +145,10 @@ msg_process(FromAddr, #msg{code=?CODE_KEYSYNC, body=Body}) ->
 						{Pid} ->
 							gen_fsm:send_all_state_event(Pid, {update_address, FromAddr});
 						_ ->
-							gen_server:call(dispatcher, {	PlainInfo#msg_body_keysync_info.client_id,
+							gen_server:call(dispatcher, {create_conn, {	PlainInfo#msg_body_keysync_info.client_id,
 															PlainInfo#msg_body_keysync_info.shared_key,
 															PlainInfo#msg_body_keysync_info.garble_script,
-															[]})
+															[]}})
 					end,
 					{ok, <<LocalID:32/unsigned-big-integer>>} = application:get_env(local_id),
 					send_msg(FromAddr, #msg{code=?CODE_CONNECT,
