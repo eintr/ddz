@@ -117,7 +117,7 @@ decrypt_keysync(MsgBody, {PrivK, _PubK}) ->
 	end.
 
 eval_str(S) ->
-	case erl_scan:string(S) of
+	case erl_scan:string(S++".") of
 		{ok, Scaned, _} ->
 			case erl_parse:parse_exprs(Scaned) of
 				{ok, Parsed} ->
