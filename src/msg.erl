@@ -72,14 +72,24 @@ decode(MsgBin) ->
 	end.
 
 encrypt_keysync(Info, {_PrivK, PubK}) ->
+	io:format("encrypt_keysync ~p\n", [Info]),
 	PlainBin = <<	(Info#msg_body_keysync_info.client_id):32/unsigned-big-integer,
-					(Info#msg_body_keysync_info.shared_key):?SHAREDKEY_LENGTH/binary,
-					(list_to_binary(Info#msg_body_keysync_info.username)):32/binary,
-					(list_to_binary(Info#msg_body_keysync_info.password)):32/binary,
-					(list_to_binary(Info#msg_body_keysync_info.garble_script))/binary >>,
+					(Info#msg_body_keysync_info.shared_key):8/binary,
+					(str_to_nbin(Info#msg_body_keysync_info.username, 32)):32/binary,
+					(str_to_nbin(Info#msg_body_keysync_info.password, 32)):32/binary,
+					(list_to_binary(
+						lists:flatten(
+							io_lib:format("~p", 
+								[Info#msg_body_keysync_info.garble_script]	))))/binary
+				>>,
 	MD5 = crypto:hash(md5, PlainBin),
 	CryptedBin = crypto:public_encrypt(rsa, PlainBin, PubK, rsa_pkcs1_padding),
 	#msg_body_keysync{info=CryptedBin, md5=MD5}.
+
+str_to_nbin(Str, Len) when length(Str) >= Len ->
+	binary:part(list_to_binary(Str), 0, Len);
+str_to_nbin(Str, Len) when length(Str) < Len ->
+	<<(list_to_binary(Str))/binary, (binary:copy(<<0>>, Len-length(Str)))/binary>>.
 
 decrypt_keysync(MsgBody, {PrivK, _PubK}) ->
 	CryptedBin = MsgBody#msg_body_keysync.info,
