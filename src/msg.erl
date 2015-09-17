@@ -46,7 +46,7 @@ decode(MsgBin) ->
 			Body = #msg_body_crtreq{type=0},
 			{ok, #msg{code=Code, body=Body}};
 		?CODE_CRT ->
-			{ok, #msg{code=Code, body=BodyBin}};
+			{ok, #msg{code=Code, body=#msg_body_crt{x509=BodyBin}}};
 		?CODE_KEYSYNC ->
 			<<MD5:16/binary,
 			  Info/binary >> = BodyBin,
