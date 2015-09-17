@@ -191,7 +191,7 @@ pending_crtreq(ServerCFG) ->
 	end.
 
 send_msg(Addr, Msg) ->
-	io:format("~p: Send ~p to ~p\n", [?MODULE, Msg, Addr]),
+	io:format("~p: Send {~p,...} to ~p\n", [?MODULE, Msg#msg.code, Addr]),
 	{ok, Bin} = msg:encode(Msg),
 	gen_server:cast(tranceiver, {down, Addr, Bin}).
 
