@@ -32,8 +32,11 @@ init([]) ->
 	{ok, Pid} = connection_control:start_link(),
 	put(?CONNID_CTRL, {Pid}),
 	io:format("~p: inited.\n", [?MODULE]),
-	{ok, PeerList} = application:get_env(connect_peers),
-	lists:foreach(fun (S)-> gen_fsm:send_event(Pid, {connect_req, S}) end, PeerList),
+	case application:get_env(connect_peers) of
+		{ok, PeerList} ->
+			lists:foreach(fun (S)-> gen_fsm:send_event(Pid, {connect_req, S}) end, PeerList);
+		_ -> do_nothing
+	end,
 	{ok, {}}.
 
 handle_call({destroy_conn, ConnID}, _From, State) ->
