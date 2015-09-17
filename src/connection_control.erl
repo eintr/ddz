@@ -47,7 +47,7 @@ loop({connect_req, ServerCFG}, State) ->
 	case gen_server:call(kv_store, {lookup, {rsa, ServerIP}}) of
 		{ok, {_Crt, Pubkey}} ->
 			io:format("~p: Going to connect to ~p\n", [?MODULE, ServerCFG]),
-			{ok, <<LocalID:32/unsigned-big-integer>>} = application:get_env(local_id),
+			{ok, LocalID} = application:get_env(local_id),
 			SharedKey = crypto:rand_bytes(?SHAREDKEY_LENGTH),
 			{account, {Username, Password}} = lists:keyfind(account, 1, ServerCFG),
 			{garble_script, GS} = lists:keyfind(garble_script, 1, ServerCFG),
@@ -141,15 +141,10 @@ msg_process(FromAddr, #msg{code=?CODE_KEYSYNC, body=Body}) ->
 											   PlainInfo#msg_body_keysync_info.username,
 											   PlainInfo#msg_body_keysync_info.password}) of
 				{pass, _ExtraInfo} ->
-					case get(PlainInfo#msg_body_keysync_info.client_id) of
-						{Pid} ->
-							gen_fsm:send_all_state_event(Pid, {update_address, FromAddr});
-						_ ->
-							gen_server:call(dispatcher, {create_conn, {	PlainInfo#msg_body_keysync_info.client_id,
+					gen_server:call(dispatcher, {create_conn, {	PlainInfo#msg_body_keysync_info.client_id,
 															PlainInfo#msg_body_keysync_info.shared_key,
 															PlainInfo#msg_body_keysync_info.garble_script,
-															[]}})
-					end,
+															[]}}),
 					{ok, <<LocalID:32/unsigned-big-integer>>} = application:get_env(local_id),
 					send_msg(FromAddr, #msg{code=?CODE_CONNECT,
 										    body=#msg_body_connect{server_id=LocalID}});

@@ -31,12 +31,16 @@ start_link(ConnCfg) ->
 %% gen_fsm Function Definitions
 %% ------------------------------------------------------------------
 
-init([{PeerID, SharedKey, GS, RouteList}]) ->
+init([{PeerID, PeerAddr, SharedKey, GS, RouteList}]) ->
 	{ok, LocalID} = application:get_env(local_id),
 	MTU = 1500-garble:delta_len(GS),
+	put(peeraddr, [PeerAddr]),
 	{ok, TunPID} = create_tun(LocalID, PeerID, MTU, RouteList),
 	{ok, relay, {LocalID, TunPID, SharedKey, GS, {1, 0}}}.
 
+relay({update_address, NewAddr}, State) ->
+	put(peeraddr, [NewAddr]),
+	{next_state, relay, State};
 relay({up, FromAddr, Body}, {_LocalID, TunPID, SharedKey, _GS, _Repeat}=State) ->
 	put(peeraddr, [FromAddr]),
 	tuncer:send(TunPID, decrypt(SharedKey, Body#msg_body_data.payload, Body#msg_body_data.len)),

@@ -73,7 +73,7 @@ decode(MsgBin) ->
 
 encrypt_keysync(Info, {_PrivK, PubK}) ->
 	io:format("encrypt_keysync ~p\n", [Info]),
-	PlainBin = <<	(Info#msg_body_keysync_info.client_id):32/unsigned-big-integer,
+	PlainBin = <<	(Info#msg_body_keysync_info.client_id):4/binary,
 					(Info#msg_body_keysync_info.shared_key):8/binary,
 					(str_to_nbin(Info#msg_body_keysync_info.username, 32)):32/binary,
 					(str_to_nbin(Info#msg_body_keysync_info.password, 32)):32/binary,
@@ -97,7 +97,7 @@ decrypt_keysync(MsgBody, {PrivK, _PubK}) ->
 	PlainBin = public_key:decrypt_private(CryptedBin, PrivK),
 	case crypto:hash(md5, PlainBin) of
 		MD5 ->
-			<<ClientID:32/unsigned-big-integer,
+			<<ClientID:4/binary,
 			  SharedK:?SHAREDKEY_LENGTH/binary,
 			  Username:32/binary,
 			  Password:32/binary,

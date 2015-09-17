@@ -47,11 +47,15 @@ handle_call({destroy_conn, ConnID}, _From, State) ->
 			io:format("~p: connection: ~p not exsist, can't delete.\n", [?MODULE, ConnID])
 	end,
 	{reply, todo, State};
-handle_call({create_conn, ConnCfg}, _From, State) ->
-	{ok, Pid} = connection:start(ConnCfg),
-	{ConnID, _, _, _, _} = ConnCfg,
-	put(ConnID, {Pid}),
-	io:format("~p: Registered ~p for conn ~p\n", [?MODULE, Pid, ConnID]),
+handle_call({create_conn, {PeerID, PeerAddr, _SharedKey, _GS, _RouteList}=ConnCfg}, _From, State) ->
+	case get(PeerID) of
+		{Pid} ->
+			gen_fsm:send_event(Pid, {update_address, PeerAddr});
+		undefined ->
+			{ok, Pid} = connection:start(ConnCfg),
+			put(PeerID, {Pid}),
+			io:format("~p: Registered ~p for conn ~p\n", [?MODULE, Pid, PeerID])
+	end,
 	{reply, ok, State};
 handle_call(_Request, _From, State) ->
 	io:format("~p: Don't know how to deal with call ~p\n", [?SERVER, _Request]),
