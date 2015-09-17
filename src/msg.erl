@@ -83,7 +83,7 @@ encrypt_keysync(Info, {_PrivK, PubK}) ->
 								[Info#msg_body_keysync_info.garble_script]	))))/binary
 				>>,
 	MD5 = crypto:hash(md5, PlainBin),
-	CryptedBin = crypto:public_encrypt(rsa, PlainBin, PubK, rsa_pkcs1_padding),
+	CryptedBin = public_key:encrypt_public(PlainBin, PubK),
 	#msg_body_keysync{info=CryptedBin, md5=MD5}.
 
 str_to_nbin(Str, Len) when length(Str) >= Len ->
@@ -94,7 +94,7 @@ str_to_nbin(Str, Len) when length(Str) < Len ->
 decrypt_keysync(MsgBody, {PrivK, _PubK}) ->
 	CryptedBin = MsgBody#msg_body_keysync.info,
 	MD5 = MsgBody#msg_body_keysync.md5,
-	PlainBin = crypto:private_decrypt(rsa, CryptedBin, PrivK, rsa_pkcs1_padding),
+	PlainBin = public_key:decrypt_private(CryptedBin, PrivK),
 	case crypto:hash(md5, PlainBin) of
 		MD5 ->
 			<<ClientID:32/unsigned-big-integer,

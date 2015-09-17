@@ -127,8 +127,8 @@ msg_process({IP, _}, #msg{code=?CODE_CRT, body=Body}) ->
 		Pid ->
 			case verify_crt(CRT) of
 				pass ->
-					{'RSAPublicKey', A, B} = extract_pubkey(CRT),
-					gen_server:cast(kv_store, {save_perm, {rsa, IP}, {CRT, [B, A]}}),
+					PubKey = extract_pubkey(CRT),
+					gen_server:cast(kv_store, {save_perm, {rsa, IP}, {CRT, PubKey}}),
 					erase({pending_crtreq, IP}),
 					Pid ! crt_ready;
 				_ ->
@@ -196,7 +196,7 @@ send_msg(Addr, Msg) ->
 	{ok, Bin} = msg:encode(Msg),
 	gen_server:cast(tranceiver, {down, Addr, Bin}).
 
-verify_crt(_CertBin) ->
+verify_crt(_CertBin) -> % TODO
 	pass.
 
 load_x509(Fname) ->
