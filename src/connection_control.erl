@@ -142,6 +142,7 @@ msg_process(FromAddr, #msg{code=?CODE_KEYSYNC, body=Body}) ->
 											   PlainInfo#msg_body_keysync_info.password}) of
 				{pass, _ExtraInfo} ->
 					gen_server:call(dispatcher, {create_conn, {	PlainInfo#msg_body_keysync_info.client_id,
+															FromAddr,
 															PlainInfo#msg_body_keysync_info.shared_key,
 															PlainInfo#msg_body_keysync_info.garble_script,
 															[]}}),
