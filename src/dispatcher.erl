@@ -58,7 +58,7 @@ handle_call(_Request, _From, State) ->
     {reply, ok, State}.
 
 handle_cast({up, FromAddr, WireBin}, State) ->
-	Msg = msg:decode(WireBin),
+	{ok, Msg} = msg:decode(WireBin),
 	case Msg#msg.code of
 		?CODE_DATA ->
 			case get((Msg#msg.body)#msg_body_data.src_id) of
