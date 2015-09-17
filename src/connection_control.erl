@@ -44,11 +44,11 @@ init([]) ->
 
 loop({connect_req, ServerCFG}, State) ->
 	{addr, {ServerIP, ServerPort}} = lists:keyfind(addr, 1, ServerCFG),
-	case gen_server:call(kv_store, {lookup, {crt, ServerIP}}) of
-		{ok, Crt} ->
-			io:format("~p: Connect to ~p\n", [?MODULE, ServerCFG]),
-			{ok, <<LocalID:32/unsigned-big-integer>>} = application:getenv(local_id),
-			SharedKey = binary:rand_bytes(?SHAREDKEY_LENGTH),
+	case gen_server:call(kv_store, {lookup, {rsa, ServerIP}}) of
+		{ok, {_Crt, Pubkey}} ->
+			io:format("~p: Going to connect to ~p\n", [?MODULE, ServerCFG]),
+			{ok, <<LocalID:32/unsigned-big-integer>>} = application:get_env(local_id),
+			SharedKey = crypto:rand_bytes(?SHAREDKEY_LENGTH),
 			{account, {Username, Password}} = lists:keyfind(account, 1, ServerCFG),
 			{garble_script, GS} = lists:keyfind(garble_script, 1, ServerCFG),
 			KSInfo = #msg_body_keysync_info{ client_id = LocalID,
@@ -57,7 +57,6 @@ loop({connect_req, ServerCFG}, State) ->
 											 password = Password,
 											 garble_script = GS},
 			put({pending_keysync, ServerIP, ServerPort}, {spawn(fun ()-> pending_keysync({ServerIP, ServerPort}, KSInfo, ServerCFG) end)}),
-			{ok, Pubkey} = extract_pubkey(Crt),
 			KSyncMsg = #msg{ code = ?CODE_KEYSYNC,
 							 body = msg:encrypt_keysync(KSInfo, {<<>>, Pubkey})
 						   },
@@ -120,6 +119,7 @@ msg_process(FromAddr, #msg{code=?CODE_CRTREQ, body=_}) ->
 		  end,
 	send_msg(FromAddr, Msg);
 msg_process({IP, _}, #msg{code=?CODE_CRT, body=Body}) ->
+	io:format("GOT a CRT msg:~p\n", [#msg{code=?CODE_CRT, body=Body}]),
 	CRT = Body#msg_body_crt.x509,
 	case get({pending_crtreq, IP}) of
 		undefined ->
@@ -127,8 +127,9 @@ msg_process({IP, _}, #msg{code=?CODE_CRT, body=Body}) ->
 		Pid ->
 			case verify_crt(CRT) of
 				pass ->
-					gen_server:cast(kv_store, {save_perm, {crt, IP}, CRT}),
-					erase({pending_crtreq, IP}),	
+					{'RSAPublicKey', A, B} = extract_pubkey(CRT),
+					gen_server:cast(kv_store, {save_perm, {rsa, IP}, {CRT, [B, A]}}),
+					erase({pending_crtreq, IP}),
 					Pid ! crt_ready;
 				_ ->
 					io:format("Ignored an illegal CRT.\n")
