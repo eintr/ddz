@@ -1,0 +1,31 @@
+{application, didaozhan,
+ [
+  {description, "This is a tunnel application."},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { didaozhan_app, []}},
+  {env, [
+			{ local_id, <<10,0,0,1>> },
+			{ local_addrs, [{0,0,0,0}] },
+			{ local_ports, [1943] },
+			{ rsa_crt, "server.crt" },
+			{ rsa_key, "server.key" },
+			{ accounts, [
+							{"user1", "pass1", {otherinfo}},
+							{"user2", "pass2", {otherinfo}}
+						]},
+			{ connect_peers, [
+				[
+					{addr, {{107,161,16,30}, 1943}},
+					{account, { "user", "password"}},
+					{garble_script, [{insert, 0, <<0, 1, 0, 0, 0, 0, 0, 0, 3, 16#77, 16#77, 16#77, 4, 16#73, 16#6f, 16#68, 16#75, 3, 16#63, 16#6f, 16#6d, 0>>}, {insert, {0, 16}, random}]},	% Fake a DNS query of www.sohu.com
+					{route_prefix, [default]}
+				]
+			]}
+		]}
+ ]}.
+
