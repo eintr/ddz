@@ -175,6 +175,7 @@ pending_keysync({IP, Port}, KSInfo, ServerCFG) ->
 							_ -> []
 						end,
 			gen_server:call(dispatcher, {create_conn, {	KSInfo#msg_body_keysync_info.client_id,
+														{IP, Port},
 														KSInfo#msg_body_keysync_info.shared_key,
 														KSInfo#msg_body_keysync_info.garble_script,
 														RouteList}})
