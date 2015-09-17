@@ -145,9 +145,10 @@ msg_process(FromAddr, #msg{code=?CODE_KEYSYNC, body=Body}) ->
 						{Pid} ->
 							gen_fsm:send_all_state_event(Pid, {update_address, FromAddr});
 						_ ->
-							{ok, Pid} = connection:start({PlainInfo, FromAddr}),
-							put(PlainInfo#msg_body_keysync_info.client_id, {Pid}),
-							io:format("~p: Registered ~p for conn ~p\n", [?MODULE, Pid, FromAddr])
+							gen_server:call(dispatcher, {	PlainInfo#msg_body_keysync_info.client_id,
+															PlainInfo#msg_body_keysync_info.shared_key,
+															PlainInfo#msg_body_keysync_info.garble_script,
+															[]})
 					end,
 					{ok, <<LocalID:32/unsigned-big-integer>>} = application:get_env(local_id),
 					send_msg(FromAddr, #msg{code=?CODE_CONNECT,
@@ -158,11 +159,11 @@ msg_process(FromAddr, #msg{code=?CODE_KEYSYNC, body=Body}) ->
 		{error, Reason} ->
 			io:format("keysync msg error: ~s\n", [Reason])
 	end;
-msg_process({PeerIP, PeerPort}, #msg{code=?CODE_CONNECT, body=#msg_body_connect{server_id=ServerID}}) ->
+msg_process({PeerIP, PeerPort}, #msg{code=?CODE_CONNECT, body=_}) ->
 	case get({pending_keysync, PeerIP, PeerPort}) of
 		{Pid} ->
 			erase({pending_keysync, PeerIP, PeerPort}),
-			Pid ! {connected, ServerID};
+			Pid ! connected;
 		undefined ->
 			io:format("Ignored an unexpected CONNECT.\n")
 	end;
@@ -173,8 +174,15 @@ msg_process(_FromAddr, #msg{code=CODE, body=_}) ->
 
 pending_keysync({IP, Port}, KSInfo, ServerCFG) ->
 	receive
-		{connected, PeerID} ->
-			gen_server:call(dispatcher, {create_conn, {PeerID, KSInfo, ServerCFG}})
+		connected ->
+			RouteList = case lists:keyfind(route_prefix, 1, ServerCFG) of
+							{ok, L} -> L;
+							_ -> []
+						end,
+			gen_server:call(dispatcher, {create_conn, {	KSInfo#msg_body_keysync_info.client_id,
+														KSInfo#msg_body_keysync_info.shared_key,
+														KSInfo#msg_body_keysync_info.garble_script,
+														RouteList}})
 	after 3000 ->
 		gen_fsm:send_event(connection_control, {keysync_timeout, {IP, Port}})
 	end.

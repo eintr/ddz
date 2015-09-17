@@ -31,13 +31,10 @@ start_link(ConnCfg) ->
 %% gen_fsm Function Definitions
 %% ------------------------------------------------------------------
 
-init([{PeerID, KSInfo, ServerCFG}]) ->
+init([{PeerID, SharedKey, GS, RouteList}]) ->
 	LocalID = application:get_env(local_id),
-	MTU = 1500-garble:delta_len(KSInfo#msg_body_keysync_info.garble_script),
-	SharedKey = KSInfo#msg_body_keysync_info.shared_key,
-	{ok, ExtraRouteList} = lists:keyfind(route_prefix, 1, ServerCFG),
-	{ok, GS} = lists:keyfind(garble_script, 1, ServerCFG),
-	{ok, TunPID} = create_tun(LocalID, PeerID, MTU, ExtraRouteList),
+	MTU = 1500-garble:delta_len(GS),
+	{ok, TunPID} = create_tun(LocalID, PeerID, MTU, RouteList),
 	{ok, relay, {LocalID, TunPID, SharedKey, GS, {1, 0}}}.
 
 relay({up, FromAddr, Body}, {_LocalID, TunPID, SharedKey, _GS, _Repeat}=State) ->
