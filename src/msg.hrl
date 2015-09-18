@@ -46,7 +46,7 @@
 		 }).
 
 -record(msg_body_reset, {
-		  peer_id,
+		  peer_id
 		 }).
 
 -record(msg_body_ping, {
