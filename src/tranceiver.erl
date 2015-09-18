@@ -67,6 +67,7 @@ handle_cast(_Msg, State) ->
     {noreply, State}.
 
 handle_info({udp, _Socket, SAddr, SPort, WireBin}, State) ->
+	io:format("~p: Got UDP packet from ~p\n", [?MODULE, {SAddr,SPort}]),
 	gen_server:cast(dispatcher, {up, {SAddr, SPort}, WireBin}),
 	{noreply, State};
 handle_info(_Info, State) ->
