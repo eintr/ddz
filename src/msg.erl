@@ -27,6 +27,9 @@ encode(Msg) ->
 						(Body#msg_body_reject.client_id):4/binary,
 						(list_to_binary(Body#msg_body_reject.reason))/binary >>,
 			{ok, << (Msg#msg.code):8, BodyBin/binary>>};
+		?CODE_REJECT ->
+			BodyBin = <<(Body#msg_body_reset.peer_id)/binary>>,
+			{ok, <<(Msg#msg.code):8, BodyBin/binary>>};
 		?CODE_CLOSE ->
 			BodyBin = <<>>,
 			{ok, << (Msg#msg.code):8, BodyBin/binary>>};
@@ -60,11 +63,13 @@ decode(MsgBin) ->
 			Body = #msg_body_connect{server_id=ServerID},
 			{ok, #msg{code=Code, body=Body}};
 		?CODE_REJECT ->
-			<<
-			  ClientID:4/binary,
-			  Reason/binary
-			>> = BodyBin,
+			<<ClientID:4/binary,
+			  Reason/binary	>> = BodyBin,
 			Body = #msg_body_reject{client_id=ClientID, reason=binary_to_list(Reason)},
+			{ok, #msg{code=Code, body=Body}};
+		?CODE_RESET ->
+			<<PeerID:4/binary>> = BodyBin,
+			Body = #msg_body_reset{peer_id=PeerID},
 			{ok, #msg{code=Code, body=Body}};
 		_Code ->
 			io:format("Unknown Msg code ~p\n", [_Code]),

@@ -4,6 +4,7 @@
 -define(CODE_KEYSYNC, 3).
 -define(CODE_CONNECT, 4).
 -define(CODE_REJECT, 5).
+-define(CODE_RESET, 6).
 -define(CODE_PING, 11).
 -define(CODE_PONG, 12).
 -define(CODE_CLOSE, 20).
@@ -42,6 +43,10 @@
 -record(msg_body_reject, {
 		  client_id,
 		  reason
+		 }).
+
+-record(msg_body_reset, {
+		  peer_id,
 		 }).
 
 -record(msg_body_ping, {
