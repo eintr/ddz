@@ -71,8 +71,8 @@ handle_cast({up, FromAddr, WireBin}, {LocalID}=State) ->
 				{Pid} ->
 					gen_fsm:send_event(Pid, {up, FromAddr, Msg#msg.body});
 				undefined ->
-					gen_server:cast(tranceiver, {down, FromAddr, #msg{ code=?CODE_RESET, 
-																	   body=#msg_body_reset{peer_id=LocalID}}}),
+					{ok, MsgBin} = msg:encode(#msg{ code=?CODE_RESET, body=#msg_body_reset{peer_id=LocalID}}),
+					gen_server:cast(tranceiver, {down, FromAddr, MsgBin}),
 					io:format("Got data from unknown id: ~p, reset it\n", [(Msg#msg.body)#msg_body_data.src_id])
 			end;
 		?CODE_RESET ->
