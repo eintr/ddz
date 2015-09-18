@@ -145,7 +145,7 @@ msg_process(FromAddr, #msg{code=?CODE_KEYSYNC, body=Body}) ->
 															FromAddr,
 															PlainInfo#msg_body_keysync_info.shared_key,
 															PlainInfo#msg_body_keysync_info.garble_script,
-															[]}}),
+															[], passive}}),
 					{ok, LocalID} = application:get_env(local_id),
 					send_msg(FromAddr, #msg{code=?CODE_CONNECT,
 										    body=#msg_body_connect{server_id=LocalID}});
@@ -179,7 +179,7 @@ pending_keysync({IP, Port}, KSInfo, ServerCFG) ->
 														{IP, Port},
 														KSInfo#msg_body_keysync_info.shared_key,
 														KSInfo#msg_body_keysync_info.garble_script,
-														RouteList}})
+														RouteList, ServerCFG}})
 	after 3000 ->
 		gen_fsm:send_event(connection_control, {keysync_timeout, {IP, Port}}),
 		%io:format("~p: Expecting CONNECT timedout, retry in 3.14 seconds.\n", [?MODULE]),

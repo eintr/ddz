@@ -37,17 +37,19 @@ init([]) ->
 			lists:foreach(fun (S)-> gen_fsm:send_event(Pid, {connect_req, S}) end, PeerList);
 		_ -> do_nothing
 	end,
-	{ok, {}}.
+	{ok, LocalID} = application:get_env(local_id),
+	{ok, {LocalID}}.
 
 handle_call({destroy_conn, ConnID}, _From, State) ->
 	case get(ConnID) of
 		{Pid} ->
+			erase(ConnID),
 			gen_fsm:send_event(Pid, quit);
 		undefined ->
 			io:format("~p: connection: ~p not exsist, can't delete.\n", [?MODULE, ConnID])
 	end,
 	{reply, todo, State};
-handle_call({create_conn, {PeerID, PeerAddr, SharedKey, _GS, _RouteList}=ConnCfg}, _From, State) ->
+handle_call({create_conn, {PeerID, PeerAddr, SharedKey, _GS, _RouteList, _ServerCFG}=ConnCfg}, _From, State) ->
 	case get(PeerID) of
 		{Pid} ->
 			gen_fsm:send_event(Pid, {update, PeerAddr, SharedKey});
@@ -61,16 +63,24 @@ handle_call(_Request, _From, State) ->
 	io:format("~p: Don't know how to deal with call ~p\n", [?SERVER, _Request]),
     {reply, ok, State}.
 
-handle_cast({up, FromAddr, WireBin}, State) ->
+handle_cast({up, FromAddr, WireBin}, {LocalID}=State) ->
 	{ok, Msg} = msg:decode(WireBin),
 	case Msg#msg.code of
 		?CODE_DATA ->
 			case get((Msg#msg.body)#msg_body_data.src_id) of
 				{Pid} ->
-					%io:format("~p: Got data from ~p, relay it to ~p\n", [?MODULE, (Msg#msg.body)#msg_body_data.src_id, Pid]),
 					gen_fsm:send_event(Pid, {up, FromAddr, Msg#msg.body});
 				undefined ->
-					io:format("Got data from unknown id: ~p, drop it\n", [(Msg#msg.body)#msg_body_data.src_id])
+					gen_server:cast(tranceiver, {down, FromAddr, #msg{ code=?CODE_RESET, 
+																	   body=#msg_body_reset{peer_id=LocalID}}}),
+					io:format("Got data from unknown id: ~p, reset it\n", [(Msg#msg.body)#msg_body_data.src_id])
+			end;
+		?CODE_RESET ->
+			case get((Msg#msg.body)#msg_body_reset.peer_id) of
+				{Pid} ->
+					gen_fsm:send_event(Pid, {reset, FromAddr});
+				undefined ->
+					io:format("Got data from unknown id: ~p, forgot it\n", [(Msg#msg.body)#msg_body_reset.peer_id])
 			end;
 		_ ->
 			{Pid} = get(?CONNID_CTRL),

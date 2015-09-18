@@ -14,9 +14,10 @@
 %% gen_fsm Function Exports
 %% ------------------------------------------------------------------
 
--export([init/1, relay/2, relay/3, handle_event/3,
+-export([init/1, handle_event/3,
          handle_sync_event/4, handle_info/3, terminate/3,
          code_change/4]).
+-export([relay/2, relay/3, pending_reset/2]).
 
 %% ------------------------------------------------------------------
 %% API Function Definitions
@@ -31,23 +32,34 @@ start_link(ConnCfg) ->
 %% gen_fsm Function Definitions
 %% ------------------------------------------------------------------
 
-init([{PeerID, PeerAddr, SharedKey, GS, RouteList}]) ->
+init([{PeerID, PeerAddr, SharedKey, GS, RouteList, ServerCFG}]) ->
 	{ok, LocalID} = application:get_env(local_id),
 	MTU = 1500-garble:delta_len(GS),
-	put(peeraddr, [PeerAddr]),
+	put(peeraddr, PeerAddr),
+	put(peerid, PeerID),
+	put(servercfg, ServerCFG),
 	{ok, TunPID} = create_tun(LocalID, PeerID, MTU, RouteList),
 	{ok, relay, {LocalID, TunPID, SharedKey, GS, {1, 0}}}.
 
+relay(quit, State) ->
+	{stop, normal, State};
+relay({reset, NewAddr}, State) ->
+	case get(servercfg) of
+		passive ->
+			gen_server:call(dispatcher, {destroy_conn, get(peerid)}),
+			{next_state, relay, State};
+		ServerCFG ->
+			gen_server:call(connection_control, {connect_req, lists:keyreplace(addr, 1, ServerCFG, {addr, NewAddr})}),
+			{next_state, pending_reset, State}
+	end;
 relay({update, NewAddr, NewKey}, {_LocalID, TunPID, _SharedKey, _GS, _Repeat}) ->
 	io:format("~p: Connection with ~p updated to ~p, Key=~p\n", [?MODULE, get(peeraddr), NewAddr, NewKey]),
-	put(peeraddr, [NewAddr]),
+	put(peeraddr, NewAddr),
 	{next_state, relay, {_LocalID, TunPID, NewKey, _GS, _Repeat}};
 relay({up, FromAddr, Body}, {_LocalID, TunPID, SharedKey, _GS, _Repeat}=State) ->
-	put(peeraddr, [FromAddr]),
+	put(peeraddr, FromAddr),
 	tuncer:send(TunPID, decrypt(SharedKey, Body#msg_body_data.payload, Body#msg_body_data.len)),
 	{next_state, relay, State};
-relay(quit, _State) ->
-	{stop, normal};
 relay(_Event, State) ->
 	io:format("conn/relay: Unknown event: ~p\n", [_Event]),
     {next_state, relay, State}.
@@ -57,6 +69,15 @@ relay(stat, _From, State) ->
 relay(_Event, _From, State) ->
 	io:format("Unknown event: ~p from ~p\n", [_Event, _From]),
     {reply, ok, relay, State}.
+
+pending_reset(quit, State) ->
+	{stop, normal, State};
+pending_reset({update, NewAddr, NewKey}, {_LocalID, TunPID, _SharedKey, _GS, _Repeat}) ->
+	io:format("~p: Connection with ~p reset over\n", [?MODULE, TunPID]),
+	put(peeraddr, NewAddr),
+	{next_state, relay, {_LocalID, TunPID, NewKey, _GS, _Repeat}};
+pending_reset(_Event, State) ->
+    {next_state, pending_reset, State}.
 
 handle_event(_Event, StateName, State) ->
 	{next_state, StateName, State}.
@@ -70,7 +91,7 @@ handle_info({tuntap, TunPID, TunPktBin}, relay, {LocalID, TunPID, SharedKey, _GS
 				body=#msg_body_data{ src_id=LocalID,
 									 len=byte_size(TunPktBin),
 									 payload=CryptedBin}},
-	[DAddr] = get(peeraddr),
+	DAddr = get(peeraddr),
 	{ok, MsgBin} = msg:encode(Msg),
 	echo_send(DAddr, Repeat, MsgBin),
 	{next_state, relay, State};
