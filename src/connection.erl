@@ -38,9 +38,10 @@ init([{PeerID, PeerAddr, SharedKey, GS, RouteList}]) ->
 	{ok, TunPID} = create_tun(LocalID, PeerID, MTU, RouteList),
 	{ok, relay, {LocalID, TunPID, SharedKey, GS, {1, 0}}}.
 
-relay({update_address, NewAddr}, State) ->
+relay({update, NewAddr, NewKey}, {_LocalID, TunPID, _SharedKey, _GS, _Repeat}) ->
+	io:format("~p: Connection with ~p updated to ~p, Key=~p\n", [?MODULE, get(peeraddr), NewAddr, NewKey]),
 	put(peeraddr, [NewAddr]),
-	{next_state, relay, State};
+	{next_state, relay, {_LocalID, TunPID, NewKey, _GS, _Repeat}};
 relay({up, FromAddr, Body}, {_LocalID, TunPID, SharedKey, _GS, _Repeat}=State) ->
 	put(peeraddr, [FromAddr]),
 	tuncer:send(TunPID, decrypt(SharedKey, Body#msg_body_data.payload, Body#msg_body_data.len)),

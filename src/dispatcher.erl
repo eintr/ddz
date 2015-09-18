@@ -47,10 +47,10 @@ handle_call({destroy_conn, ConnID}, _From, State) ->
 			io:format("~p: connection: ~p not exsist, can't delete.\n", [?MODULE, ConnID])
 	end,
 	{reply, todo, State};
-handle_call({create_conn, {PeerID, PeerAddr, _SharedKey, _GS, _RouteList}=ConnCfg}, _From, State) ->
+handle_call({create_conn, {PeerID, PeerAddr, SharedKey, _GS, _RouteList}=ConnCfg}, _From, State) ->
 	case get(PeerID) of
 		{Pid} ->
-			gen_fsm:send_event(Pid, {update_address, PeerAddr});
+			gen_fsm:send_event(Pid, {update, PeerAddr, SharedKey});
 		undefined ->
 			{ok, Pid} = connection:start(ConnCfg),
 			put(PeerID, {Pid}),
