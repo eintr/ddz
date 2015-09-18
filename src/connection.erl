@@ -49,7 +49,7 @@ relay({reset, NewAddr}, State) ->
 			gen_server:call(dispatcher, {destroy_conn, get(peerid)}),
 			{next_state, relay, State};
 		ServerCFG ->
-			gen_server:call(connection_control, {connect_req, lists:keyreplace(addr, 1, ServerCFG, {addr, NewAddr})}),
+			gen_fsm:send_event(connection_control, {connect_req, lists:keyreplace(addr, 1, ServerCFG, {addr, NewAddr})}),
 			{next_state, pending_reset, State}
 	end;
 relay({update, NewAddr, NewKey}, {_LocalID, TunPID, _SharedKey, _GS, _Repeat}) ->
