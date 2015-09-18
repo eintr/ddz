@@ -181,7 +181,9 @@ pending_keysync({IP, Port}, KSInfo, ServerCFG) ->
 														KSInfo#msg_body_keysync_info.garble_script,
 														RouteList}})
 	after 3000 ->
-		gen_fsm:send_event(connection_control, {keysync_timeout, {IP, Port}})
+		gen_fsm:send_event(connection_control, {keysync_timeout, {IP, Port}}),
+		io:format("~p: Expecting CONNECT timedout, retry in 3.14 seconds.\n", [?MODULE]),
+		timer:apply_after(3140, gen_fsm, send_event, [connection_control, {connect_req, ServerCFG}])
 	end.
 
 pending_crtreq(ServerCFG) ->
