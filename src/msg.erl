@@ -20,11 +20,11 @@ encode(Msg) ->
 						(Body#msg_body_keysync.info)/binary >>,
 			{ok, << (Msg#msg.code):8, BodyBin/binary>>};
 		?CODE_CONNECT ->
-			BodyBin = <<(Body#msg_body_connect.server_id):32/unsigned-big-integer>>,
+			BodyBin = <<(Body#msg_body_connect.server_id):4/binary>>,
 			{ok, << (Msg#msg.code):8, BodyBin/binary>>};
 		?CODE_REJECT ->
 			BodyBin = <<
-						(Body#msg_body_reject.client_id):32/unsigned-big-integer,
+						(Body#msg_body_reject.client_id):4/binary,
 						(list_to_binary(Body#msg_body_reject.reason))/binary >>,
 			{ok, << (Msg#msg.code):8, BodyBin/binary>>};
 		?CODE_CLOSE ->
@@ -56,12 +56,12 @@ decode(MsgBin) ->
 					 },
 			{ok, #msg{code=Code, body=Body}};
 		?CODE_CONNECT ->
-			<<ServerID:32/unsigned-big-integer>> = BodyBin,
+			<<ServerID:4/binary>> = BodyBin,
 			Body = #msg_body_connect{server_id=ServerID},
 			{ok, #msg{code=Code, body=Body}};
 		?CODE_REJECT ->
 			<<
-			  ClientID:32/unsigned-big-integer,
+			  ClientID:4/binary,
 			  Reason/binary
 			>> = BodyBin,
 			Body = #msg_body_reject{client_id=ClientID, reason=binary_to_list(Reason)},

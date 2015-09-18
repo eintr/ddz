@@ -155,11 +155,11 @@ msg_process(FromAddr, #msg{code=?CODE_KEYSYNC, body=Body}) ->
 		{error, Reason} ->
 			io:format("keysync msg error: ~s\n", [Reason])
 	end;
-msg_process({PeerIP, PeerPort}, #msg{code=?CODE_CONNECT, body=_}) ->
+msg_process({PeerIP, PeerPort}, #msg{code=?CODE_CONNECT, body=#msg_body_connect{server_id=ServerID}}) ->
 	case get({pending_keysync, PeerIP, PeerPort}) of
 		{Pid} ->
 			erase({pending_keysync, PeerIP, PeerPort}),
-			Pid ! connected;
+			Pid ! {connected, ServerID};
 		undefined ->
 			io:format("Ignored an unexpected CONNECT.\n")
 	end;
@@ -170,12 +170,12 @@ msg_process(_FromAddr, #msg{code=CODE, body=_}) ->
 
 pending_keysync({IP, Port}, KSInfo, ServerCFG) ->
 	receive
-		connected ->
+		{connected, ServerID} ->
 			RouteList = case lists:keyfind(route_prefix, 1, ServerCFG) of
 							{ok, L} -> L;
 							_ -> []
 						end,
-			gen_server:call(dispatcher, {create_conn, {	KSInfo#msg_body_keysync_info.client_id,
+			gen_server:call(dispatcher, {create_conn, {	ServerID,
 														{IP, Port},
 														KSInfo#msg_body_keysync_info.shared_key,
 														KSInfo#msg_body_keysync_info.garble_script,
