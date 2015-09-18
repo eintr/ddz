@@ -27,7 +27,7 @@ encode(Msg) ->
 						(Body#msg_body_reject.client_id):4/binary,
 						(list_to_binary(Body#msg_body_reject.reason))/binary >>,
 			{ok, << (Msg#msg.code):8, BodyBin/binary>>};
-		?CODE_REJECT ->
+		?CODE_RESET ->
 			BodyBin = <<(Body#msg_body_reset.peer_id)/binary>>,
 			{ok, <<(Msg#msg.code):8, BodyBin/binary>>};
 		?CODE_CLOSE ->
