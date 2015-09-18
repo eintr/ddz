@@ -1,6 +1,7 @@
 all:
-	mv -f didaozhan.app .didaozhan.app
+	if [ -e didaozhan.app ] ; then mv -f didaozhan.app .didaozhan.app; fi
 	cp ../ebin/* .
 	cp ../deps/*/priv/* .
 	cp ../deps/*/ebin/* .
-	mv -f .didaozhan.app didaozhan.app
+	if [ -e .didaozhan.app ] ; then mv -f .didaozhan.app didaozhan.app; fi
+
