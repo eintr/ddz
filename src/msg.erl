@@ -7,7 +7,7 @@ encode(Msg) ->
 	Body = Msg#msg.body,
 	case Msg#msg.code of
 		?CODE_DATA ->
-			BodyBin = <<(Body#msg_body_data.src_id):32/unsigned-big-integer,
+			BodyBin = <<(Body#msg_body_data.src_id):4/binary,
 						(Body#msg_body_data.len):16/unsigned-big-integer,
 						(Body#msg_body_data.payload)/binary>>,
 			{ok, << (Msg#msg.code):8,BodyBin/binary >>};
@@ -38,7 +38,7 @@ decode(MsgBin) ->
 	<<Code:8/big-integer, BodyBin/binary>> = MsgBin,
 	case Code of
 		?CODE_DATA ->
-			<<SrcID:32/unsigned-big-integer,
+			<<SrcID:4/binary,
 			  Len:16/unsigned-big-integer,
 			  Data/binary>> = BodyBin,
 			{ok, #msg{code=Code, body=#msg_body_data{src_id=SrcID, len=Len, payload=Data}}};

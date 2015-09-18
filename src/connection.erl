@@ -70,13 +70,14 @@ handle_info({tuntap, TunPID, TunPktBin}, relay, {LocalID, TunPID, SharedKey, _GS
 									 len=byte_size(TunPktBin),
 									 payload=CryptedBin}},
 	[DAddr] = get(peeraddr),
-	echo_send(DAddr, Repeat, msg:encode(Msg)),
+	{ok, MsgBin} = msg:encode(Msg),
+	echo_send(DAddr, Repeat, MsgBin),
 	{next_state, relay, State};
 handle_info(_Info, StateName, State) ->
     {next_state, StateName, State}.
 
-terminate(_Reason, _StateName, {_ConnID, TunPID}) ->
-	ok = tuncer:close(TunPID),
+terminate(_Reason, _StateName, {_LocalID, TunPID, _SharedKey, _GS, _Repeat}) ->
+	ok = tuncer:destroy(TunPID),
 	ok.
 
 code_change(_OldVsn, StateName, State, _Extra) ->
@@ -101,7 +102,7 @@ create_tun(<<A1:8, A2:8, A3:8, A4:8>>, <<B1:8, B2:8, B3:8, B4:8>>, MTU, ExtraRou
 	{ok, TunPID}.
 
 encrypt(Key, Tip) when byte_size(Tip)<8 ->
-	crypto:block_encrypt(Key, <<Tip/binary, (binary:copy(<<0>>, 8-byte_size(Tip)))/binary>>);
+	crypto:block_encrypt(blowfish_ecb, Key, <<Tip/binary, (binary:copy(<<0>>, 8-byte_size(Tip)))/binary>>);
 encrypt(Key, <<Block:8/binary, Rest/binary>>) ->
 	<<(crypto:block_encrypt(blowfish_ecb, Key, Block))/binary, (encrypt(Key, Rest))/binary>>.
 
@@ -109,7 +110,7 @@ decrypt(Key, Bin, Len) ->
 	binary:part(decrypt(Key, Bin), 0, Len).
 decrypt(_, <<>>) -> <<>>;
 decrypt(Key, <<Block:8/binary, Rest/binary>>) ->
-	<<(crypto:block_encrypt(blowfish_ecb, Key, Block))/binary, (decrypt(Key, Rest))/binary>>.
+	<<(crypto:block_decrypt(blowfish_ecb, Key, Block))/binary, (decrypt(Key, Rest))/binary>>.
 
 echo_send(DAddr, {1, _}, Bin) ->
 	gen_server:cast(tranceiver, {down, DAddr, Bin});
