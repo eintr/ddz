@@ -146,7 +146,7 @@ msg_process(FromAddr, #msg{code=?CODE_KEYSYNC, body=Body}) ->
 															PlainInfo#msg_body_keysync_info.shared_key,
 															PlainInfo#msg_body_keysync_info.garble_script,
 															[]}}),
-					{ok, <<LocalID:32/unsigned-big-integer>>} = application:get_env(local_id),
+					{ok, LocalID} = application:get_env(local_id),
 					send_msg(FromAddr, #msg{code=?CODE_CONNECT,
 										    body=#msg_body_connect{server_id=LocalID}});
 				{fail, Reason} ->
