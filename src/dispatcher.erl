@@ -67,6 +67,7 @@ handle_cast({up, FromAddr, WireBin}, State) ->
 		?CODE_DATA ->
 			case get((Msg#msg.body)#msg_body_data.src_id) of
 				{Pid} ->
+					io:format("~p: Got data from ~p, relay it to ~p\n", [?MODULE, (Msg#msg.body)#msg_body_data.src_id, Pid]),
 					gen_fsm:send_event(Pid, {up, FromAddr, Msg#msg.body});
 				undefined ->
 					io:format("Got data from unknown id: ~p, drop it\n", [(Msg#msg.body)#msg_body_data.src_id])
