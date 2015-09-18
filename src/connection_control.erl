@@ -46,7 +46,7 @@ loop({connect_req, ServerCFG}, State) ->
 	{addr, {ServerIP, ServerPort}} = lists:keyfind(addr, 1, ServerCFG),
 	case gen_server:call(kv_store, {lookup, {rsa, ServerIP}}) of
 		{ok, {_Crt, Pubkey}} ->
-			io:format("~p: Going to connect to ~p\n", [?MODULE, ServerCFG]),
+			%io:format("~p: Going to connect to ~p\n", [?MODULE, ServerCFG]),
 			{ok, LocalID} = application:get_env(local_id),
 			SharedKey = crypto:rand_bytes(?SHAREDKEY_LENGTH),
 			{account, {Username, Password}} = lists:keyfind(account, 1, ServerCFG),
@@ -182,7 +182,7 @@ pending_keysync({IP, Port}, KSInfo, ServerCFG) ->
 														RouteList}})
 	after 3000 ->
 		gen_fsm:send_event(connection_control, {keysync_timeout, {IP, Port}}),
-		io:format("~p: Expecting CONNECT timedout, retry in 3.14 seconds.\n", [?MODULE]),
+		%io:format("~p: Expecting CONNECT timedout, retry in 3.14 seconds.\n", [?MODULE]),
 		timer:apply_after(3140, gen_fsm, send_event, [connection_control, {connect_req, ServerCFG}])
 	end.
 
