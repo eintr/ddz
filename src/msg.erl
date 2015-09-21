@@ -30,6 +30,9 @@ encode(Msg) ->
 		?CODE_RESET ->
 			BodyBin = <<(Body#msg_body_reset.peer_id)/binary>>,
 			{ok, <<(Msg#msg.code):8, BodyBin/binary>>};
+		?CODE_PING ->
+			BodyBin = <<(Body#msg_body_ping.)/binary>>,
+			{ok, <<(Msg#msg.code):8, BodyBin/binary>>};
 		?CODE_CLOSE ->
 			BodyBin = <<>>,
 			{ok, << (Msg#msg.code):8, BodyBin/binary>>};
