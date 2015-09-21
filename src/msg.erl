@@ -31,7 +31,10 @@ encode(Msg) ->
 			BodyBin = <<(Body#msg_body_reset.peer_id)/binary>>,
 			{ok, <<(Msg#msg.code):8, BodyBin/binary>>};
 		?CODE_PING ->
-			BodyBin = <<(Body#msg_body_ping.)/binary>>,
+			BodyBin = <<(Body#msg_body_ping.dst_id):4/binary,
+						(Body#msg_body_ping.seq):32/unsigned-big-integer,
+						(Body#msg_body_ping.timestamp):64/unsigned-big-integer,
+						(Body#msg_body_ping.cookie):16/binary >>,
 			{ok, <<(Msg#msg.code):8, BodyBin/binary>>};
 		?CODE_CLOSE ->
 			BodyBin = <<>>,
@@ -73,6 +76,13 @@ decode(MsgBin) ->
 		?CODE_RESET ->
 			<<PeerID:4/binary>> = BodyBin,
 			Body = #msg_body_reset{peer_id=PeerID},
+			{ok, #msg{code=Code, body=Body}};
+		?CODE_PING ->
+			<<DST_ID:4/binary,
+			  Seq:32/unsigned-big-integer,
+			  Timestamp:64/unsigned-big-integer,
+			  Cookie:16/binary >> = BodyBin,
+			Body = #msg_body_ping{dst_id=DST_ID, seq=Seq, timestamp=Timestamp, cookie=Cookie},
 			{ok, #msg{code=Code, body=Body}};
 		_Code ->
 			io:format("Unknown Msg code ~p\n", [_Code]),
