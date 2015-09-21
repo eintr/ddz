@@ -50,13 +50,17 @@
 		 }).
 
 -record(msg_body_ping, {
+		  dst_id,
 		  seq,
-		  timestamp
+		  timestamp,
+		  cookie
 		 }).
 
 -record(msg_body_pong, {
+		  dst_id,
 		  seq,
-		  timestamp
+		  timestamp,
+		  cookie
 		 }).
 
 -record(msg, {

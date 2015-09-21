@@ -48,7 +48,12 @@ loop({connect_req, ServerCFG}, State) ->
 		{ok, {_Crt, Pubkey}} ->
 			%io:format("~p: Going to connect to ~p\n", [?MODULE, ServerCFG]),
 			{ok, LocalID} = application:get_env(local_id),
-			SharedKey = crypto:rand_bytes(?SHAREDKEY_LENGTH),
+			SharedKey = case lists:keyfind(crypt, 1, ServerCFG) of
+							{crypt, true} ->
+								crypto:rand_bytes(?SHAREDKEY_LENGTH);
+							_ ->
+								<<>>
+						end,
 			{account, {Username, Password}} = lists:keyfind(account, 1, ServerCFG),
 			{garble_script, GS} = lists:keyfind(garble_script, 1, ServerCFG),
 			KSInfo = #msg_body_keysync_info{ client_id = LocalID,

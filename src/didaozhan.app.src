@@ -22,8 +22,9 @@
 				[
 					{addr, {{107,161,16,30}, 1943}},
 					{account, { "user", "password"}},
+					{crypt, true},
 					{garble_script, [{insert, 0, <<0, 1, 0, 0, 0, 0, 0, 0, 3, 16#77, 16#77, 16#77, 4, 16#73, 16#6f, 16#68, 16#75, 3, 16#63, 16#6f, 16#6d, 0>>}, {insert, {0, 16}, random}]},	% Fake a DNS query of www.sohu.com
-					{route_prefix, [default]}
+					{route_prefix, ["8.8.8.8"]}
 				]
 			]}
 		]}
