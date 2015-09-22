@@ -10,7 +10,13 @@
 %% ===================================================================
 
 start(_StartType, _StartArgs) ->
-    didaozhan_sup:start_link().
+	case os:type() of
+		{unix, linux} ->
+			didaozhan_sup:start_link();
+		T ->
+			io:format("System ~p is not supported, yet.\n", [T]),
+			{error, "OS not supported"}
+	end.
 
 stop(_State) ->
     ok.
