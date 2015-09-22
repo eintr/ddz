@@ -123,13 +123,13 @@ create_tun(<<A1:8, A2:8, A3:8, A4:8>>, <<B1:8, B2:8, B3:8, B4:8>>, MTU, ExtraRou
 	io:format("~p: ~s is configured an activated.\n", [?MODULE, get(tun_ifname)]),
 	{ok, TunPID}.
 
-encrypt(<<>>, B) -> B;
+encrypt(<<0,0,0,0,0,0,0,0>>, B) -> B;
 encrypt(Key, Tip) when byte_size(Tip)<8 ->
 	crypto:block_encrypt(blowfish_ecb, Key, <<Tip/binary, (binary:copy(<<0>>, 8-byte_size(Tip)))/binary>>);
 encrypt(Key, <<Block:8/binary, Rest/binary>>) ->
 	<<(crypto:block_encrypt(blowfish_ecb, Key, Block))/binary, (encrypt(Key, Rest))/binary>>.
 
-decrypt(<<>>, B, _) -> B;
+decrypt(<<0,0,0,0,0,0,0,0>>, B, _) -> B;
 decrypt(Key, Bin, Len) ->
 	binary:part(decrypt(Key, Bin), 0, Len).
 decrypt(_, <<>>) -> <<>>;

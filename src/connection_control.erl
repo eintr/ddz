@@ -52,7 +52,7 @@ loop({connect_req, ServerCFG}, State) ->
 							{crypt, true} ->
 								crypto:rand_bytes(?SHAREDKEY_LENGTH);
 							_ ->
-								<<>>
+								<<0,0,0,0,0,0,0,0>>
 						end,
 			{account, {Username, Password}} = lists:keyfind(account, 1, ServerCFG),
 			{garble_script, GS} = lists:keyfind(garble_script, 1, ServerCFG),
